@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>JARVIS Workforce Manager V7</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#111827;--muted:#667085;--line:#e5e7eb;--primary:#111827;--soft:#eef2ff;--green:#067647;--red:#b42318;--amber:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+header{background:var(--primary);color:#fff;padding:20px 16px 18px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:22px}header p{margin:4px 0 0;font-size:12px;opacity:.75}
+nav{display:flex;gap:6px;overflow:auto;background:#fff;border-bottom:1px solid var(--line);padding:8px;position:sticky;top:77px;z-index:9}
+nav button{border:0;background:transparent;padding:10px 12px;border-radius:10px;white-space:nowrap;font-weight:600;color:var(--muted)}
+nav button.active{background:#111827;color:#fff}
+main{max-width:1000px;margin:auto;padding:14px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px #00000008}
+h2{font-size:17px;margin:0 0 12px}.hint{color:var(--muted);font-size:13px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{font-size:19px;margin-top:3px;display:block}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bigbtn{padding:16px;border:1px solid var(--line);background:#fff;border-radius:14px;text-align:left;font-weight:700;font-size:14px}.bigbtn span{display:block;font-size:22px;margin-bottom:6px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;font-weight:650;color:#475467}input,select,textarea{width:100%;margin-top:5px;padding:12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;font:inherit;font-size:15px}textarea{min-height:80px;resize:vertical}.full{grid-column:1/-1}
+button{cursor:pointer}button.primary,.primary{background:#111827;color:#fff;border:0;border-radius:10px;padding:12px 15px;font-weight:700}button.secondary,.secondary{background:#fff;color:#111827;border:1px solid #d0d5dd;border-radius:10px;padding:12px 15px;font-weight:700}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}.spacer{flex:1!important}
+.worker{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);padding:13px;border-radius:13px;margin:8px 0}.worker strong{display:block}.worker small{color:var(--muted)}.amount{font-weight:800}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.ok{background:#ecfdf3;color:var(--green)}.no{background:#fef3f2;color:var(--red)}
+.notice{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:#475467;margin-bottom:12px}
+.search{margin-bottom:10px}.empty{text-align:center;color:var(--muted);padding:25px}.danger{color:var(--red)}
+@media(max-width:600px){form{grid-template-columns:1fr}.full{grid-column:auto}.grid{grid-template-columns:repeat(2,1fr)}nav{top:77px}.actions{grid-template-columns:1fr 1fr}th,td{padding:8px 6px}}
+</style>
+</head>
+<body>
+<header><h1>JARVIS Workforce Manager <small style="font-size:11px;opacity:.6">V7</small></h1><p>Simple workers • daily work • salary • advances • payments</p></header>
+<nav>
+<button class="active" data-page="home" onclick="show('home',this)">🏠 Home</button>
+<button data-page="boys" onclick="show('boys',this)">👷 Boys</button>
+<button data-page="contractors" onclick="show('contractors',this)">🤝 Contractors</button>
+<button data-page="cworkers" onclick="show('cworkers',this)">👩‍🍳 Contract Workers</button>
+<button data-page="work" onclick="show('work',this)">➕ Add Work</button>
+<button data-page="diary" onclick="show('diary',this)">📅 Work Diary</button>
+<button data-page="reports" onclick="show('reports',this)">📊 Reports</button>
+</nav>
+<main>
+<section id="home" class="page active">
+<div class="grid" id="stats"></div>
+<div class="card"><h2>Quick actions</h2><div class="actions">
+<button class="bigbtn" onclick="showById('work')"><span>➕</span>Add today's work</button>
+<button class="bigbtn" onclick="showById('diary')"><span>📅</span>See work by date</button>
+<button class="bigbtn" onclick="showById('boys')"><span>👷</span>Daily boys</button>
+<button class="bigbtn" onclick="showById('contractors')"><span>🤝</span>Contractors</button>
+</div></div>
+<div class="card"><h2>Today's work</h2><div id="today"></div></div>
+</section>
+
+<section id="boys" class="page">
+<div class="card"><h2>Daily Boys</h2><div class="hint">These are your separately paid daily boys. They are not linked to a contractor.</div>
+<div id="boyList"></div></div>
+<div class="card"><h2 id="boyFormTitle">Add daily boy</h2>
+<form id="boyForm">
+<input type="hidden" id="boyId">
+<label>Name<input id="boyName" required></label>
+<label>Daily salary (₹)<input id="boyRate" type="number" min="0" step=".01" required></label>
+<label>Phone (optional)<input id="boyPhone"></label>
+<label>Default place (optional)<input id="boyPlace"></label>
+<div class="full row"><button class="primary">Save boy</button><button class="secondary" type="button" onclick="resetBoy()">Clear</button></div>
+</form></div>
+</section>
+
+<section id="contractors" class="page">
+<div class="card"><h2>Contractors</h2><div class="hint">Keep each contractor separate. Example: Catering Ladies and Tiffin Contractor.</div>
+<div id="contractorList"></div></div>
+<div class="card"><h2 id="contractorFormTitle">Add contractor</h2>
+<form id="contractorForm">
+<input type="hidden" id="contractorId">
+<label>Contractor name<input id="contractorName" required placeholder="Catering Ladies / Tiffin Contractor"></label>
+<label>Phone (optional)<input id="contractorPhone"></label>
+<label>Notes<input id="contractorNotes" placeholder="Optional"></label>
+<div class="full row"><button class="primary">Save contractor</button><button class="secondary" type="button" onclick="resetContractor()">Clear</button></div>
+</form></div>
+</section>
+
+<section id="cworkers" class="page">
+<div class="card"><h2>Workers under contractors</h2><div class="hint">Every contractor's workers stay in their own group. A worker can be assigned to only one contractor.</div>
+<div id="cworkerList"></div></div>
+<div class="card"><h2 id="cworkerFormTitle">Add contractor worker</h2>
+<form id="cworkerForm">
+<input type="hidden" id="cworkerId">
+<label>Worker name<input id="cworkerName" required></label>
+<label>Contractor<select id="cworkerContractor" required></select></label>
+<label>Daily salary (₹)<input id="cworkerRate" type="number" min="0" step=".01" required></label>
+<label>Phone (optional)<input id="cworkerPhone"></label>
+<label>Default place (optional)<input id="cworkerPlace"></label>
+<div class="full row"><button class="primary">Save worker</button><button class="secondary" type="button" onclick="resetCWorker()">Clear</button></div>
+</form></div>
+</section>
+
+<section id="work" class="page">
+<div class="card"><h2>Add daily work</h2>
+<div class="notice">First choose <b>Daily Boy</b> or <b>Contract Worker</b>. Contractor workers will always show their contractor.</div>
+<form id="workForm">
+<input type="hidden" id="workId">
+<label>Date<input id="workDate" type="date" required></label>
+<label>Worker type<select id="workGroup" onchange="workGroupChanged()"><option value="boy">Daily Boy</option><option value="cworker">Contract Worker</option></select></label>
+<label>Worker<select id="workPerson" required onchange="workPersonChanged()"></select></label>
+<label>Contractor<select id="workContractor" disabled></select></label>
+<label>Where did they work?<input id="workPlace" required placeholder="Site / location"></label>
+<label>Work done<input id="workType" placeholder="Cooking / serving / tiffin / helper..."></label>
+<label>Attendance<select id="workPresent"><option value="1">Present</option><option value="0">Absent</option><option value=".5">Half day</option></select></label>
+<label>Daily salary (₹)<input id="workRate" type="number" min="0" step=".01"></label>
+<label>Advance (₹)<input id="workAdvance" type="number" min="0" step=".01" value="0"></label>
+<label>Allowance (₹)<input id="workAllowance" type="number" min="0" step=".01" value="0"></label>
+<label class="full">Notes<input id="workNotes" placeholder="Optional"></label>
+<div class="full row"><button class="primary">Save work</button><button class="secondary" type="button" onclick="resetWork()">Clear</button></div>
+</form></div>
+</section>
+
+<section id="diary" class="page">
+<div class="card"><h2>Work diary</h2>
+<div class="row">
+<label style="flex:1">Date<input id="diaryDate" type="date" onchange="renderDiary()"></label>
+<label style="flex:1">Group<select id="diaryGroup" onchange="diaryGroupChanged()"><option value="">All</option><option value="boy">Daily Boys</option><option value="cworker">Contract Workers</option></select></label>
+<label style="flex:1">Worker<select id="diaryPerson" onchange="renderDiary()"></select></label>
+</div>
+<div id="diaryResult" style="margin-top:12px"></div></div>
+</section>
+
+<section id="reports" class="page">
+<div class="card"><h2>Salary report</h2>
+<div class="row">
+<label style="flex:1">Month<input id="reportMonth" type="month" onchange="renderReports()"></label>
+<label style="flex:1">Group<select id="reportGroup" onchange="reportGroupChanged()"><option value="">All</option><option value="boy">Daily Boys</option><option value="cworker">Contract Workers</option></select></label>
+<label style="flex:1">Worker<select id="reportPerson" onchange="renderReports()"></select></label>
+<label style="flex:1">Contractor<select id="reportContractor" onchange="renderReports()"></select></label>
+</div><div id="reportResult" style="margin-top:12px"></div></div>
+<div class="card"><h2>Backup</h2><div class="hint">Data saves automatically on this device. Local backup is refreshed when you save, close, or move the app to the background.</div><p id="backupStatus" class="hint"></p>
+<div class="row"><button class="primary" onclick="exportData()">Export backup</button><button class="secondary" onclick="document.getElementById('importFile').click()">Import backup</button><input id="importFile" type="file" accept=".json" hidden onchange="importData(event)"></div></div>
+</section>
+</main>
+<script>
+const KEY='jarvisWorkforceManagerV7_1';
+const $=id=>document.getElementById(id);
+const todayISO=()=>{let d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function loadDB(){
+ let raw=localStorage.getItem(KEY);
+ if(raw)try{return normalize(JSON.parse(raw))}catch{}
+ const keys=['jarvisWorkforceManagerV3','jarvisWorkforceManagerV2','workerContractorManager_v1'];
+ for(const k of keys){raw=localStorage.getItem(k);if(raw)try{return normalize(JSON.parse(raw))}catch{}}
+ return {boys:[],contractors:[],cworkers:[],work:[]};
+}
+function normalize(x){
+ let boys=[], cworkers=[];
+ const oldWorkers=x.workers||x.boys||[];
+ const contractors=x.contractors||[];
+ // Older versions had workers with contractorId. Preserve them as contractor workers.
+ oldWorkers.forEach(w=>{
+   const base={id:w.id||uid(),name:w.name||'',rate:Number(w.rate||0),phone:w.phone||'',place:w.place||''};
+   if(w.contractorId) cworkers.push({...base,contractorId:w.contractorId});
+   else boys.push(base);
+ });
+ const work=(x.work||[]).map(w=>({
+   id:w.id||uid(),date:w.date||todayISO(),
+   group:w.group||(w.workerId&&cworkers.some(c=>c.id===w.workerId)?'cworker':'boy'),
+   personId:w.personId||w.workerId||w.boyId||'',
+   contractorId:w.contractorId||'',
+   place:w.place||'',workType:w.workType||'',
+   present:w.present===undefined?(Number(w.days||1)>0?1:0):Number(w.present),
+   rate:Number(w.rate||0),advance:Number(w.advance||0),allowance:Number(w.allowance||0),notes:w.notes||''
+ }));
+ return {boys,contractors:contractors.map(c=>({id:c.id||uid(),name:c.name||'',phone:c.phone||'',notes:c.notes||''})),cworkers,work};
+}
+let db=loadDB();
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(db));
+ localStorage.setItem(KEY+'_backup',JSON.stringify(db));
+ localStorage.setItem(KEY+'_backup_time',new Date().toISOString());
+ renderAll();
+}
+function autoBackup(){try{localStorage.setItem(KEY+'_backup',JSON.stringify(db));localStorage.setItem(KEY+'_backup_time',new Date().toISOString())}catch{}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')autoBackup()});
+window.addEventListener('pagehide',autoBackup);
+
+function show(id,btn){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ $(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ localStorage.setItem(KEY+'_page',id);renderAll();window.scrollTo(0,0);
+}
+function showById(id){show(id,document.querySelector('nav button[data-page="'+id+'"]'))}
+function personName(group,id){let a=group==='boy'?db.boys:db.cworkers;return a.find(x=>x.id===id)?.name||'Unknown'}
+function contractorName(id){return db.contractors.find(x=>x.id===id)?.name||'—'}
+function badge(p){return Number(p)===1?'<span class="badge ok">Present</span>':Number(p)===.5?'<span class="badge ok">Half day</span>':'<span class="badge no">Absent</span>'}
+
+function renderStats(){
+ let days=0,sal=0,adv=0,allow=0;
+ db.work.forEach(w=>{let p=Number(w.present||0);days+=p;sal+=p*Number(w.rate||0);adv+=Number(w.advance||0);allow+=Number(w.allowance||0)});
+ $('stats').innerHTML=[
+  ['Daily Boys',db.boys.length],['Contractors',db.contractors.length],
+  ['Contract Workers',db.cworkers.length],['Work days',days],
+  ['Gross salary',money(sal)],['Net payable',money(sal+allow-adv)]
+ ].map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+}
+function renderToday(){
+ let rows=db.work.filter(w=>w.date===todayISO());
+ if(!rows.length){$('today').innerHTML='<div class="empty">No work entered for today.</div>';return}
+ $('today').innerHTML='<div class="tablewrap"><table><thead><tr><th>Group</th><th>Worker</th><th>Contractor</th><th>Where</th><th>Work</th><th>Salary</th></tr></thead><tbody>'+
+ rows.map(w=>`<tr><td>${w.group==='boy'?'Daily Boy':'Contract Worker'}</td><td>${esc(personName(w.group,w.personId))}</td><td>${w.group==='cworker'?esc(contractorName(w.contractorId)):'—'}</td><td>${esc(w.place)}</td><td>${esc(w.workType||'—')}</td><td>${money(w.rate*w.present)}</td></tr>`).join('')+'</tbody></table></div>';
+}
+
+function renderBoys(){
+ $('boyList').innerHTML=db.boys.length?db.boys.map(b=>{
+  let r=db.work.filter(w=>w.group==='boy'&&w.personId===b.id),d=r.reduce((a,x)=>a+Number(x.present||0),0),g=r.reduce((a,x)=>a+x.rate*x.present,0),a=r.reduce((a,x)=>a+Number(x.advance||0),0);
+  return `<div class="worker"><div><strong>${esc(b.name)}</strong><small>${d} days • ${money(g-a)} payable</small></div><div class="row"><button class="secondary" onclick="viewPerson('boy','${b.id}')">View</button><button class="secondary" onclick="editBoy('${b.id}')">Edit</button></div></div>`
+ }).join(''):'<div class="empty">No daily boys added.</div>';
+}
+function renderContractors(){
+ $('contractorList').innerHTML=db.contractors.length?db.contractors.map(c=>{
+  let ws=db.cworkers.filter(w=>w.contractorId===c.id),r=db.work.filter(w=>w.group==='cworker'&&w.contractorId===c.id),g=r.reduce((a,x)=>a+x.rate*x.present,0),a=r.reduce((a,x)=>a+Number(x.advance||0),0);
+  return `<div class="worker"><div><strong>${esc(c.name)}</strong><small>${ws.length} workers • ${money(g-a)} payable</small></div><div class="row"><button class="secondary" onclick="filterContractor('${c.id}')">Workers</button><button class="secondary" onclick="editContractor('${c.id}')">Edit</button></div></div>`
+ }).join(''):'<div class="empty">No contractors added.</div>';
+}
+function renderCWorkers(){
+ $('cworkerList').innerHTML=db.cworkers.length?db.contractors.map(c=>{
+   let ws=db.cworkers.filter(w=>w.contractorId===c.id);
+   if(!ws.length)return '';
+   return `<div class="card" style="margin:8px 0;background:#f8fafc"><h2 style="margin-bottom:6px">${esc(c.name)}</h2>`+
+   ws.map(w=>{let r=db.work.filter(x=>x.group==='cworker'&&x.personId===w.id),d=r.reduce((a,x)=>a+x.present,0),g=r.reduce((a,x)=>a+x.rate*x.present,0),a=r.reduce((a,x)=>a+x.advance,0);
+    return `<div class="worker" style="background:#fff"><div><strong>${esc(w.name)}</strong><small>${d} days • ${money(g-a)} payable</small></div><div class="row"><button class="secondary" onclick="viewPerson('cworker','${w.id}')">View</button><button class="secondary" onclick="editCWorker('${w.id}')">Edit</button></div></div>`
+   }).join('')+'</div>';
+ }).join('')||'<div class="empty">Add a contractor and then add workers under that contractor.</div>';
+}
+function fillContractorSelect(id,value=''){
+ $(id).innerHTML='<option value="">Select contractor</option>'+db.contractors.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ $(id).value=value;
+}
+function fillWorkPerson(){
+ let group=$('workGroup').value,old=$('workPerson').value;
+ let arr=group==='boy'?db.boys:db.cworkers;
+ $('workPerson').innerHTML='<option value="">Select worker</option>'+arr.map(w=>`<option value="${w.id}">${esc(w.name)}${group==='cworker'?' — '+esc(contractorName(w.contractorId)):''}</option>`).join('');
+ $('workPerson').value=old;
+}
+function workGroupChanged(){fillWorkPerson();$('workContractor').disabled=$('workGroup').value!=='cworker';workPersonChanged()}
+function workPersonChanged(){
+ let group=$('workGroup').value,id=$('workPerson').value,w=(group==='boy'?db.boys:db.cworkers).find(x=>x.id===id);
+ if(w){$('workRate').value=w.rate||'';if(!$('workPlace').value)$('workPlace').value=w.place||'';$('workContractor').value=group==='cworker'?w.contractorId:''}
+}
+function resetBoy(){$('boyId').value='';$('boyName').value='';$('boyRate').value='';$('boyPhone').value='';$('boyPlace').value='';$('boyFormTitle').textContent='Add daily boy'}
+$('boyForm').onsubmit=e=>{e.preventDefault();let id=$('boyId').value||uid(),o=db.boys.find(x=>x.id===id),w={id,name:$('boyName').value.trim(),rate:Number($('boyRate').value||0),phone:$('boyPhone').value.trim(),place:$('boyPlace').value.trim()};if(o)Object.assign(o,w);else db.boys.push(w);save();resetBoy();alert('Daily boy saved')}
+function editBoy(id){let w=db.boys.find(x=>x.id===id);if(!w)return;$('boyId').value=w.id;$('boyName').value=w.name;$('boyRate').value=w.rate;$('boyPhone').value=w.phone||'';$('boyPlace').value=w.place||'';$('boyFormTitle').textContent='Edit daily boy';showById('boys')}
+function resetContractor(){$('contractorId').value='';$('contractorName').value='';$('contractorPhone').value='';$('contractorNotes').value='';$('contractorFormTitle').textContent='Add contractor'}
+$('contractorForm').onsubmit=e=>{e.preventDefault();let id=$('contractorId').value||uid(),o=db.contractors.find(x=>x.id===id),c={id,name:$('contractorName').value.trim(),phone:$('contractorPhone').value.trim(),notes:$('contractorNotes').value.trim()};if(o)Object.assign(o,c);else db.contractors.push(c);save();resetContractor();alert('Contractor saved')}
+function editContractor(id){let c=db.contractors.find(x=>x.id===id);if(!c)return;$('contractorId').value=c.id;$('contractorName').value=c.name;$('contractorPhone').value=c.phone||'';$('contractorNotes').value=c.notes||'';$('contractorFormTitle').textContent='Edit contractor';showById('contractors')}
+function filterContractor(id){$('cworkerContractor').value=id;showById('cworkers')}
+function resetCWorker(){ $('cworkerId').value='';$('cworkerName').value='';$('cworkerContractor').value='';$('cworkerRate').value='';$('cworkerPhone').value='';$('cworkerPlace').value='';$('cworkerFormTitle').textContent='Add contractor worker'}
+$('cworkerForm').onsubmit=e=>{e.preventDefault();if(!db.contractors.length){alert('Add a contractor first');return}let id=$('cworkerId').value||uid(),o=db.cworkers.find(x=>x.id===id),w={id,name:$('cworkerName').value.trim(),contractorId:$('cworkerContractor').value,rate:Number($('cworkerRate').value||0),phone:$('cworkerPhone').value.trim(),place:$('cworkerPlace').value.trim()};if(o)Object.assign(o,w);else db.cworkers.push(w);save();resetCWorker();alert('Contract worker saved')}
+function editCWorker(id){let w=db.cworkers.find(x=>x.id===id);if(!w)return;$('cworkerId').value=w.id;$('cworkerName').value=w.name;$('cworkerContractor').value=w.contractorId;$('cworkerRate').value=w.rate;$('cworkerPhone').value=w.phone||'';$('cworkerPlace').value=w.place||'';$('cworkerFormTitle').textContent='Edit contractor worker';showById('cworkers')}
+
+function resetWork(){ $('workId').value='';$('workDate').value=todayISO();$('workGroup').value='boy';fillWorkPerson();fillContractorSelect('workContractor');$('workContractor').disabled=true;$('workPerson').value='';$('workPlace').value='';$('workType').value='';$('workPresent').value='1';$('workRate').value='';$('workAdvance').value='0';$('workAllowance').value='0';$('workNotes').value='' }
+$('workForm').onsubmit=e=>{e.preventDefault();let group=$('workGroup').value,id=$('workId').value||uid(),p=$('workPerson').value;if(!p){alert('Select a worker');return}let w={id,date:$('workDate').value,group,personId:p,contractorId:group==='cworker'?$('workContractor').value:'',place:$('workPlace').value.trim(),workType:$('workType').value.trim(),present:Number($('workPresent').value),rate:Number($('workRate').value||0),advance:Number($('workAdvance').value||0),allowance:Number($('workAllowance').value||0),notes:$('workNotes').value.trim()};let i=db.work.findIndex(x=>x.id===id);if(i>=0)db.work[i]=w;else db.work.push(w);save();resetWork();alert('Work saved')}
+
+function fillDiaryPerson(){
+ let g=$('diaryGroup').value,old=$('diaryPerson').value;
+ let arr=g==='boy'?db.boys:g==='cworker'?db.cworkers:[...db.boys.map(x=>({...x,_g:'boy'})),...db.cworkers.map(x=>({...x,_g:'cworker'}))];
+ $('diaryPerson').innerHTML='<option value="">All workers</option>'+arr.map(w=>`<option value="${w._g||g}:${w.id}">${esc(w.name)}${(w._g||g)==='cworker'?' — '+esc(contractorName(w.contractorId)):''}</option>`).join('');
+ $('diaryPerson').value=old;
+}
+function diaryGroupChanged(){fillDiaryPerson();renderDiary()}
+function renderDiary(){
+ let date=$('diaryDate').value,g=$('diaryGroup').value,sel=$('diaryPerson').value;
+ let rows=db.work.filter(w=>(!date||w.date===date)&&(!g||w.group===g)&&(!sel||sel===w.group+':'+w.personId)).sort((a,b)=>b.date.localeCompare(a.date));
+ $('diaryResult').innerHTML=rows.length?'<div class="tablewrap"><table><thead><tr><th>Date</th><th>Group</th><th>Worker</th><th>Contractor</th><th>Where worked</th><th>Work</th><th>Attendance</th><th>Salary</th><th></th></tr></thead><tbody>'+
+ rows.map(w=>`<tr><td>${w.date}</td><td>${w.group==='boy'?'Daily Boy':'Contract Worker'}</td><td>${esc(personName(w.group,w.personId))}</td><td>${w.group==='cworker'?esc(contractorName(w.contractorId)):'—'}</td><td><b>${esc(w.place)}</b></td><td>${esc(w.workType||'—')}</td><td>${badge(w.present)}</td><td>${money(w.rate*w.present)}</td><td><button class="secondary" onclick="editWork('${w.id}')">Edit</button></td></tr>`).join('')+'</tbody></table></div>':'<div class="empty">No work found for this selection.</div>';
+}
+function viewPerson(g,id){$('diaryGroup').value=g;fillDiaryPerson();$('diaryPerson').value=g+':'+id;$('diaryDate').value='';showById('diary');renderDiary()}
+function editWork(id){let w=db.work.find(x=>x.id===id);if(!w)return;$('workId').value=w.id;$('workDate').value=w.date;$('workGroup').value=w.group;fillWorkPerson();$('workPerson').value=w.personId;fillContractorSelect('workContractor',w.contractorId);$('workContractor').disabled=w.group!=='cworker';$('workPlace').value=w.place;$('workType').value=w.workType||'';$('workPresent').value=String(w.present);$('workRate').value=w.rate;$('workAdvance').value=w.advance;$('workAllowance').value=w.allowance;$('workNotes').value=w.notes||'';showById('work')}
+
+function fillReportPerson(){
+ let g=$('reportGroup').value,old=$('reportPerson').value;
+ let arr=g==='boy'?db.boys:g==='cworker'?db.cworkers:[...db.boys.map(x=>({...x,_g:'boy'})),...db.cworkers.map(x=>({...x,_g:'cworker'}))];
+ $('reportPerson').innerHTML='<option value="">All workers</option>'+arr.map(w=>`<option value="${w._g||g}:${w.id}">${esc(w.name)}</option>`).join('');$('reportPerson').value=old;
+}
+function fillReportContractor(){let old=$('reportContractor').value;$('reportContractor').innerHTML='<option value="">All contractors</option>'+db.contractors.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');$('reportContractor').value=old}
+function reportGroupChanged(){fillReportPerson();renderReports()}
+function renderReports(){
+ let month=$('reportMonth').value,g=$('reportGroup').value,ps=$('reportPerson').value,cid=$('reportContractor').value;
+ let rows=db.work.filter(w=>(!month||w.date.startsWith(month))&&(!g||w.group===g)&&(!ps||ps===w.group+':'+w.personId)&&(!cid||w.contractorId===cid));
+ let s=rows.reduce((a,w)=>{a.days+=Number(w.present||0);a.salary+=w.rate*w.present;a.advance+=Number(w.advance||0);a.allowance+=Number(w.allowance||0);return a},{days:0,salary:0,advance:0,allowance:0});
+ $('reportResult').innerHTML=`<div class="grid"><div class="stat"><small>Work days</small><b>${s.days}</b></div><div class="stat"><small>Gross salary</small><b>${money(s.salary)}</b></div><div class="stat"><small>Advances</small><b>${money(s.advance)}</b></div><div class="stat"><small>Payable</small><b>${money(s.salary+s.allowance-s.advance)}</b></div></div>
+ <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Date</th><th>Group</th><th>Worker</th><th>Contractor</th><th>Place</th><th>Salary</th><th>Advance</th><th>Payable</th></tr></thead><tbody>`+
+ rows.sort((a,b)=>b.date.localeCompare(a.date)).map(w=>`<tr><td>${w.date}</td><td>${w.group==='boy'?'Daily Boy':'Contract Worker'}</td><td>${esc(personName(w.group,w.personId))}</td><td>${w.group==='cworker'?esc(contractorName(w.contractorId)):'—'}</td><td>${esc(w.place)}</td><td>${money(w.rate*w.present)}</td><td>${money(w.advance)}</td><td>${money(w.rate*w.present+w.allowance-w.advance)}</td></tr>`).join('')+'</tbody></table></div>`;
+ $('backupStatus').textContent=localStorage.getItem(KEY+'_backup_time')?'Last automatic backup: '+new Date(localStorage.getItem(KEY+'_backup_time')).toLocaleString():'Automatic backup will appear after saving.';
+}
+function exportData(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='JARVIS_Workforce_Manager_V7_Backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=normalize(JSON.parse(r.result));if(!confirm('Replace current data with this backup?'))return;db=x;save();alert('Backup imported successfully')}catch{alert('Invalid backup file')}};r.readAsText(f);e.target.value=''}
+
+function renderAll(){
+ renderStats();renderToday();renderBoys();renderContractors();renderCWorkers();
+ fillContractorSelect('cworkerContractor',$('cworkerContractor').value);
+ fillWorkPerson();fillContractorSelect('workContractor',$('workContractor').value);
+ fillDiaryPerson();fillReportPerson();fillReportContractor();renderDiary();renderReports();
+}
+$('diaryDate').value=todayISO();$('reportMonth').value=todayISO().slice(0,7);resetWork();
+let last=localStorage.getItem(KEY+'_page');if(last&&$(last)){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(last).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===last))}
+renderAll();
+</script>
+</body></html>
